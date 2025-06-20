@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SubTrack - Subscription Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --secondary: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+        }
+
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .progress-bar {
+            transition: width 0.5s ease;
+        }
+        
+        .due-soon {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #c7d2fe;
+            border-radius: 10px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #a5b4fc;
+        }
+        
+        .category-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <header class="mb-8 flex justify-between items-center">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800 flex items-center">
+                    <i class="fas fa-wallet mr-3 text-purple-600"></i>
+                    SubTrack
+                </h1>
+                <p class="text-gray-600">Your personal subscription manager</p>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button id="addSubscriptionBtn" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center">
+                    <i class="fas fa-plus mr-2"></i> Add Subscription
+                </button>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white rounded-xl shadow-md p-6 card-hover">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-gray-500">Total Monthly</p>
+                        <h3 id="totalMonthly" class="text-2xl font-bold mt-1">$0.00</h3>
+                    </div>
+                    <div class="p-3 bg-purple-100 rounded-lg text-purple-600">
+                        <i class="fas fa-calendar-alt"></i>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <div class="flex justify-between text-sm text-gray-500 mb-1">
+                        <span>This month</span>
+                        <span>Next month</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2.5">
+                        <div id="monthlyProgress" class="progress-bar bg-purple-600 h-2.5 rounded-full" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-xl shadow-md p-6 card-hover">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-gray-500">Active Subscriptions</p>
+                        <h3 id="activeSubs" class="text-2xl font-bold mt-1">0</h3>
+                    </div>
+                    <div class="p-3 bg-green-100 rounded-lg text-green-600">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                </div>
+                <div class="mt-4 text-sm">
+                    <div class="flex justify-between mb-1">
+                        <span class="text-gray-500">Categories:</span>
+                        <span id="categoryCount" class="font-medium">0</span>
+                    </div>
+                    <div id="categoryBadges" class="flex flex-wrap gap-2 mt-2"></div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-xl shadow-md p-6 card-hover">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-gray-500">Upcoming Renewals</p>
+                        <h3 id="upcomingRenewals" class="text-2xl font-bold mt-1">0</h3>
+                    </div>
+                    <div class="p-3 bg-yellow-100 rounded-lg text-yellow-600">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <div class="flex justify-between text-sm mb-1">
+                        <span class="text-gray-500">Next due:</span>
+                        <span id="nextDueDate" class="font-medium">--</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2.5">
+                        <div id="dueProgress" class="progress-bar bg-yellow-500 h-2.5 rounded-full" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                    <div class="p-6 border-b border-gray-200 flex justify-between items-center">
+                        <h2 class="text-xl font-semibold text-gray-800">Your Subscriptions</h2>
+                        <div class="relative">
+                            <select id="filterDropdown" class="appearance-none bg-gray-100 border border-gray-300 rounded-lg px-4 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                <option value="all">All Subscriptions</option>
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                                <option value="due">Due Soon</option>
+                                <option value="category">By Category</option>
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                                <i class="fas fa-chevron-down text-xs"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="overflow-y-auto custom-scrollbar" style="max-height: 600px;">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Service</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Next Payment</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="subscriptionsTable" class="bg-white divide-y divide-gray-200">
+                                <tr id="noSubscriptions" class="text-center py-8">
+                                    <td colspan="5" class="px-6 py-8 text-gray-500">
+                                        <i class="fas fa-wallet text-4xl mb-3 text-gray-300"></i>
+                                        <p class="text-lg">No subscriptions added yet</p>
+                                        <p class="text-sm mt-1">Click "Add Subscription" to get started</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="space-y-6">
+                <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                    <div class="p-6 border-b border-gray-200">
+                        <h2 class="text-xl font-semibold text-gray-800 flex items-center">
+                            <i class="fas fa-calendar-day text-yellow-500 mr-2"></i>
+                            Upcoming Payments
+                        </h2>
+                    </div>
+                    <div id="upcomingPayments" class="p-4 space-y-3">
+                        <div class="text-center py-8 text-gray-500">
+                            <i class="fas fa-clock text-3xl mb-3 text-gray-300"></i>
+                            <p>No upcoming payments</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                    <div class="p-6 border-b border-gray-200">
+                        <h2 class="text-xl font-semibold text-gray-800 flex items-center">
+                            <i class="fas fa-chart-pie text-purple-500 mr-2"></i>
+                            Spending Breakdown
+                        </h2>
+                    </div>
+                    <div class="p-4">
+                        <canvas id="spendingChart" height="200"></canvas>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-md p-6">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                        <i class="fas fa-tachometer-alt text-blue-500 mr-2"></i>
+                        Quick Stats
+                    </h2>
+                    <div class="space-y-4">
+                        <div>
+                            <div class="flex justify-between text-sm mb-1">
+                                <span class="text-gray-500">Most Expensive:</span>
+                                <span id="mostExpensive" class="font-medium">--</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="bg-red-500 h-2 rounded-full" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-sm mb-1">
+                                <span class="text-gray-500">Yearly Total:</span>
+                                <span id="yearlyTotal" class="font-medium">$0.00</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="bg-green-500 h-2 rounded-full" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-sm mb-1">
+                                <span class="text-gray-500">Average Monthly:</span>
+                                <span id="avgMonthly" class="font-medium">$0.00</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="bg-blue-500 h-2 rounded-full" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="addSubscriptionModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-md mx-4">
+            <div class="p-6 border-b border-gray-200 flex justify-between items-center">
+                <h3 class="text-xl font-semibold text-gray-800">Add New Subscription</h3>
+                <button id="closeModal" class="text-gray-400 hover:text-gray-500">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="subscriptionForm" class="p-6">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Service Name</label>
+                        <input type="text" id="serviceName" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500" required>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                        <div class="flex items-center space-x-2">
+                            <div class="relative flex-1">
+                                <select id="category" class="appearance-none w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500" required>
+                                    <option value="">Select Category</option>
+                                    <option value="Entertainment">Entertainment</option>
+                                    <option value="Productivity">Productivity</option>
+                                    <option value="Utilities">Utilities</option>
+                                    <option value="Education">Education</option>
+                                    <option value="Health">Health & Fitness</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                                    <i class="fas fa-chevron-down text-xs"></i>
+                                </div>
+                            </div>
+                            <button type="button" id="addCategoryBtn" class="p-2 bg-gray-100 rounded-lg text-gray-600 hover:bg-gray-200">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Amount</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <span class="text-gray-500">$</span>
+                            </div>
+                            <input type="number" id="amount" min="0" step="0.01" class="w-full pl-8 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500" required>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Billing Cycle</label>
+                            <select id="billingCycle" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500" required>
+                                <option value="monthly">Monthly</option>
+                                <option value="yearly">Yearly</option>
+                                <option value="weekly">Weekly</option>
+                                <option value="quarterly">Quarterly</option>
+                                <option value="bi-annual">Bi-Annual</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Payment Date</label>
+                            <input type="date" id="paymentDate" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500" required>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                        <div class="flex space-x-4">
+                            <div class="flex items-center">
+                                <input type="radio" id="statusActive" name="status" value="active" checked class="h-4 w-4 text-purple-600 focus:ring-purple-500">
+                                <label for="statusActive" class="ml-2 block text-sm text-gray-700">Active</label>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="radio" id="statusInactive" name="status" value="inactive" class="h-4 w-4 text-purple-600 focus:ring-purple-500">
+                                <label for="statusInactive" class="ml-2 block text-sm text-gray-700">Inactive</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Notes (Optional)</label>
+                        <textarea id="notes" rows="2" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"></textarea>
+                    </div>
+                </div>
+                
+                <div class="mt-6 flex justify-end space-x-3">
+                    <button type="button" id="cancelBtn" class="px-4 py-2 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-6 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700">
+                        Save Subscription
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="categoryModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-sm mx-4">
+            <div class="p-6 border-b border-gray-200 flex justify-between items-center">
+                <h3 class="text-lg font-semibold text-gray-800">Add New Category</h3>
+                <button id="closeCategoryModal" class="text-gray-400 hover:text-gray-500">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="categoryForm" class="p-6">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Category Name</label>
+                        <input type="text" id="newCategoryName" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Icon (optional)</label>
+                        <input type="text" id="newCategoryIcon" placeholder="e.g. fas fa-music (Font Awesome code)" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                    </div>
+                </div>
+                <div class="mt-6 flex justify-end space-x-3">
+                    <button type="button" id="cancelCategoryBtn" class="px-4 py-2 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-6 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700">
+                        Add Category
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="editSubscriptionModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-md mx-4">
+            <div class="p-6 border-b border-gray-200 flex justify-between items-center">
+                <h3 class="text-xl font-semibold text-gray-800">Edit Subscription</h3>
+                <button id="closeEditModal" class="text-gray-400 hover:text-gray-500">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="editSubscriptionForm" class="p-6">
+                <input type="hidden" id="editId">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Service Name</label>
+                        <input type="text" id="editServiceName" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500" required>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                        <div class="relative">
+                            <select id="editCategory" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500" required>
+                                <option value="">Select Category</option>
+                                <option value="Entertainment">Entertainment</option>
+                                <option value="Productivity">Productivity</option>
+                                <option value="Utilities">Utilities</option>
+                                <option value="Education">Education</option>
+                                <option value="Health">Health & Fitness</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Amount</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <span class="text-gray-500">$</span>
+                            </div>
+                            <input type="number" id="editAmount" min="0" step="0.01" class="w-full pl-8 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500" required>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Billing Cycle</label>
+                            <select id="editBillingCycle" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500" required>
+                                <option value="monthly">Monthly</option>
+                                <option value="yearly">Yearly</option>
+                                <option value="weekly">Weekly</option>
+                                <option value="quarterly">Quarterly</option>
+                                <option value="bi-annual">Bi-Annual</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Payment Date</label>
+                            <input type="date" id="editPaymentDate" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500" required>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                        <div class="flex space-x-4">
+                            <div class="flex items-center">
+                                <input type="radio" id="editStatusActive" name="editStatus" value="active" class="h-4 w-4 text-purple-600 focus:ring-purple-500">
+                                <label for="editStatusActive" class="ml-2 block text-sm text-gray-700">Active</label>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="radio" id="editStatusInactive" name="editStatus" value="inactive" class="h-4 w-4 text-purple-600 focus:ring-purple-500">
+                                <label for="editStatusInactive" class="ml-2 block text-sm text-gray-700">Inactive</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Notes (Optional)</label>
+                        <textarea id="editNotes" rows="2" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"></textarea>
+                    </div>
+                </div>
+                
+                <div class="mt-6 flex justify-between">
+                    <button type="button" id="deleteBtn" class="px-4 py-2 bg-red-100 text-red-600 rounded-lg font-medium hover:bg-red-200">
+                        <i class="fas fa-trash mr-1"></i> Delete
+                    </button>
+                    <div class="flex space-x-3">
+                        <button type="button" id="cancelEditBtn" class="px-4 py-2 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50">
+                            Cancel
+                        </button>
+                        <button type="submit" class="px-6 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700">
+                            Save Changes
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const addSubscriptionBtn = document.getElementById('addSubscriptionBtn');
+        const addSubscriptionModal = document.getElementById('addSubscriptionModal');
+        const closeModal = document.getElementById('closeModal');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const subscriptionForm = document.getElementById('subscriptionForm');
+        const subscriptionTable = document.getElementById('subscriptionsTable');
+        const noSubscriptions = document.getElementById('noSubscriptions');
+        const totalMonthly = document.getElementById('totalMonthly');
+        const activeSubs = document.getElementById('activeSubs');
+        const upcomingRenewals = document.getElementById('upcomingRenewals');
+        const nextDueDate = document.getElementById('nextDueDate');
+        const filterDropdown = document.getElementById('filterDropdown');
+        const upcomingPayments = document.getElementById('upcomingPayments');
+        const addCategoryBtn = document.getElementById('addCategoryBtn');
+        const categoryModal = document.getElementById('categoryModal');
+        const closeCategoryModal = document.getElementById('closeCategoryModal');
+        const cancelCategoryBtn = document.getElementById('cancelCategoryBtn');
+        const categoryForm = document.getElementById('categoryForm');
+        const categoryCount = document.getElementById('categoryCount');
+        const categoryBadges = document.getElementById('categoryBadges');
+        const monthlyProgress = document.getElementById('monthlyProgress');
+        const dueProgress = document.getElementById('dueProgress');
+        const mostExpensive = document.getElementById('mostExpensive');
+        const yearlyTotal = document.getElementById('yearlyTotal');
+        const avgMonthly = document.getElementById('avgMonthly');
+        const editSubscriptionModal = document.getElementById('editSubscriptionModal');
+        const editSubscriptionForm = document.getElementById('editSubscriptionForm');
+        const closeEditModal = document.getElementById('closeEditModal');
+        const cancelEditBtn = document.getElementById('cancelEditBtn');
+        const deleteBtn = document.getElementById('deleteBtn');
+        
+        let spendingChart;
+        
+        let subscriptions = JSON.parse(localStorage.getItem('subscriptions')) || [];
+        let categories = JSON.parse(localStorage.getItem('categories')) || [];
+        
+        renderSubscriptions();
+        updateStats();
+        renderChart();
+        renderUpcomingPayments();
+        
+        addSubscriptionBtn.addEventListener('click', () => {
+            addSubscriptionModal.classList.remove('hidden');
+            document.getElementById('paymentDate').valueAsDate = new Date();
+        });
+        
+        closeModal.addEventListener('click', () => {
+            addSubscriptionModal.classList.add('hidden');
+        });
+        
+        cancelBtn.addEventListener('click', () => {
+            addSubscriptionModal.classList.add('hidden');
+        });
+        
+        closeCategoryModal.addEventListener('click', () => {
+            categoryModal.classList.add('hidden');
+        });
+        
+        cancelCategoryBtn.addEventListener('click', () => {
+            categoryModal.classList.add('hidden');
+        });
+        
+        closeEditModal.addEventListener('click', () => {
+            editSubscriptionModal.classList.add('hidden');
+        });
+        
+        cancelEditBtn.addEventListener('click', () => {
+            editSubscriptionModal.classList.add('hidden');
+        });
+        
+        addCategoryBtn.addEventListener('click', () => {
+            categoryModal.classList.remove('hidden');
+        });
+        
+        filterDropdown.addEventListener('change', function() {
+            renderSubscriptions(this.value);
+        });
+        
+        subscriptionForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const newSubscription = {
+                id: Date.now().toString(),
+                name: document.getElementById('serviceName').value,
+                category: document.getElementById('category').value,
+                amount: parseFloat(document.getElementById('amount').value),
+                billingCycle: document.getElementById('billingCycle').value,
+                paymentDate: document.getElementById('paymentDate').value,
+                status: document.querySelector('input[name="status"]:checked').value,
+                notes: document.getElementById('notes').value,
+                createdAt: new Date().toISOString()
+            };
+            
+            addSubscription(newSubscription);
+            addSubscriptionModal.classList.add('hidden');
+            subscriptionForm.reset();
+        });
+        
+        categoryForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const newCategory = {
+                name: document.getElementById('newCategoryName').value,
+                icon: document.getElementById('newCategoryIcon').value || 'fas fa-tag'
+            };
+            
+            if (!categories.some(cat => cat.name.toLowerCase() === newCategory.name.toLowerCase())) {
+                categories.push(newCategory);
+                localStorage.setItem('categories', JSON.stringify(categories));
+                
+                const option = document.createElement('option');
+                option.value = newCategory.name;
+                option.textContent = newCategory.name;
+                document.getElementById('category').appendChild(option);
+                document.getElementById('editCategory').appendChild(option.cloneNode(true));
+                
+                renderCategoryBadges();
+                categoryModal.classList.add('hidden');
+                categoryForm.reset();
+            } else {
+                alert('This category already exists!');
+            }
+        });
+        
+        editSubscriptionForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const updatedSubscription = {
+                id: document.getElementById('editId').value,
+                name: document.getElementById('editServiceName').value,
+                category: document.getElementById('editCategory').value,
+                amount: parseFloat(document.getElementById('editAmount').value),
+                billingCycle: document.getElementById('editBillingCycle').value,
+                paymentDate: document.getElementById('editPaymentDate').value,
+                status: document.querySelector('input[name="editStatus"]:checked').value,
+                notes: document.getElementById('editNotes').value
+            };
+            
+            updateSubscription(updatedSubscription);
+            editSubscriptionModal.classList.add('hidden');
+        });
+        
+        deleteBtn.addEventListener('click', function() {
+            if (confirm('Are you sure you want to delete this subscription?')) {
+                const id = document.getElementById('editId').value;
+                deleteSubscription(id);
+                editSubscriptionModal.classList.add('hidden');
+            }
+        });
+        
+        function addSubscription(subscription) {
+            subscriptions.push(subscription);
+            saveSubscriptions();
+            renderSubscriptions();
+            updateStats();
+            renderChart();
+            renderUpcomingPayments();
+        }
+        
+        function updateSubscription(updatedSub) {
+            const index = subscriptions.findIndex(sub => sub.id === updatedSub.id);
+            if (index !== -1) {
+                subscriptions[index] = {...subscriptions[index], ...updatedSub};
+                saveSubscriptions();
+                renderSubscriptions();
+                updateStats();
+                renderChart();
+                renderUpcomingPayments();
+            }
+        }
+        
+        function deleteSubscription(id) {
+            subscriptions = subscriptions.filter(sub => sub.id !== id);
+            saveSubscriptions();
+            renderSubscriptions();
+            updateStats();
+            renderChart();
+            renderUpcomingPayments();
+        }
+        
+        function saveSubscriptions() {
+            localStorage.setItem('subscriptions', JSON.stringify(subscriptions));
+        }
+        
+        function renderSubscriptions(filter = 'all') {
+            let filteredSubs = subscriptions;
+            
+            switch(filter) {
+                case 'active':
+                    filteredSubs = subscriptions.filter(sub => sub.status === 'active');
+                    break;
+                case 'inactive':
+                    filteredSubs = subscriptions.filter(sub => sub.status === 'inactive');
+                    break;
+                case 'due':
+                    filteredSubs = subscriptions.filter(sub => isDueSoon(sub.paymentDate));
+                    break;
+                case 'category':
+                    // This would need a category filter implementation
+                    break;
+            }
+            
+            if (filteredSubs.length === 0) {
+                subscriptionTable.innerHTML = '';
+                subscriptionTable.appendChild(noSubscriptions);
+                return;
+            }
+            
+            subscriptionTable.innerHTML = '';
+            
+            filteredSubs.sort((a, b) => new Date(a.paymentDate) - new Date(b.paymentDate)).forEach(sub => {
+                const dueSoon = isDueSoon(sub.paymentDate);
+                const row = document.createElement('tr');
+                row.className = `hover:bg-gray-50 ${dueSoon ? 'bg-yellow-50' : ''}`;
+                
+                const nextPayment = new Date(sub.paymentDate);
+                const formattedDate = nextPayment.toLocaleDateString('en-US', { 
+                    month: 'short', 
+                    day: 'numeric',
+                    year: nextPayment.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined
+                });
+                
+                const formattedAmount = new Intl.NumberFormat('en-US', {
+                    style: 'currency',
+                    currency: 'USD'
+                }).format(sub.amount);
+                
+                const categoryColors = {
+                    'Entertainment': 'bg-purple-100 text-purple-800',
+                    'Productivity': 'bg-blue-100 text-blue-800',
+                    'Utilities': 'bg-green-100 text-green-800',
+                    'Education': 'bg-indigo-100 text-indigo-800',
+                    'Health & Fitness': 'bg-red-100 text-red-800',
+                    'Other': 'bg-gray-100 text-gray-800'
+                };
+                
+                const catColor = categoryColors[sub.category] || 'bg-gray-100 text-gray-800';
+                
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center">
+                            <div class="category-icon ${catColor} mr-3">
+                                <i class="${getCategoryIcon(sub.category)}"></i>
+                            </div>
+                            <div>
+                                <div class="font-medium text-gray-900">${sub.name}</div>
+                                <div class="text-sm text-gray-500">${sub.category}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap font-medium">
+                        ${formattedAmount}
+                        <div class="text-xs text-gray-500">${getFrequencyText(sub.billingCycle)}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap ${dueSoon ? 'font-bold' : ''}">
+                        ${formattedDate}
+                        ${dueSoon ? '<span class="inline-block ml-2 px-2 py-1 text-xs font-semibold leading-4 bg-yellow-100 text-yellow-800 rounded-full">Due Soon</span>' : ''}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 py-1 text-xs font-semibold leading-4 rounded-full ${sub.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">
+                            ${sub.status === 'active' ? 'Active' : 'Inactive'}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button data-id="${sub.id}" class="edit-btn text-purple-600 hover:text-purple-900 mr-3">Edit</button>
+                        <button data-id="${sub.id}" class="delete-btn text-red-600 hover:text-red-900">Delete</button>
+                    </td>
+                `;
+                
+                subscriptionTable.appendChild(row);
+            });
+            
+            document.querySelectorAll('.edit-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id = this.getAttribute('data-id');
+                    editSubscription(id);
+                });
+            });
+            
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id = this.getAttribute('data-id');
+                    if (confirm('Are you sure you want to delete this subscription?')) {
+                        deleteSubscription(id);
+                    }
+                });
+            });
+        }
+        
+        function editSubscription(id) {
+            const sub = subscriptions.find(sub => sub.id === id);
+            if (sub) {
+                document.getElementById('editId').value = sub.id;
+                document.getElementById('editServiceName').value = sub.name;
+                document.getElementById('editCategory').value = sub.category;
+                document.getElementById('editAmount').value = sub.amount;
+                document.getElementById('editBillingCycle').value = sub.billingCycle;
+                document.getElementById('editPaymentDate').value = sub.paymentDate;
+                document.getElementById(sub.status === 'active' ? 'editStatusActive' : 'editStatusInactive').checked = true;
+                document.getElementById('editNotes').value = sub.notes || '';
+                
+                editSubscriptionModal.classList.remove('hidden');
+            }
+        }
+        
+        function updateStats() {
+            const activeSubscriptions = subscriptions.filter(sub => sub.status === 'active');
+            const monthlyTotal = activeSubscriptions.reduce((total, sub) => {
+                if (sub.billingCycle === 'monthly') return total + sub.amount;
+                if (sub.billingCycle === 'yearly') return total + (sub.amount / 12);
+                if (sub.billingCycle === 'weekly') return total + (sub.amount * 4);
+                if (sub.billingCycle === 'quarterly') return total + (sub.amount / 3);
+                if (sub.billingCycle === 'bi-annual') return total + (sub.amount / 6);
+                return total + sub.amount;
+            }, 0);
+            
+            totalMonthly.textContent = new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD'
+            }).format(monthlyTotal);
+            
+            activeSubs.textContent = activeSubscriptions.length;
+            
+            const now = new Date();
+            const sevenDaysFromNow = new Date();
+            sevenDaysFromNow.setDate(now.getDate() + 7);
+            
+            const upcoming = subscriptions.filter(sub => {
+                if (sub.status !== 'active') return false;
+                const paymentDate = new Date(sub.paymentDate);
+                return paymentDate >= now && paymentDate <= sevenDaysFromNow;
+            }).length;
+            
+            upcomingRenewals.textContent = upcoming;
+            
+            // Next due date
+            const activeSubsWithDates = activeSubscriptions.filter(sub => {
+                const paymentDate = new Date(sub.paymentDate);
+                return paymentDate >= now;
+            });
+            
+            if (activeSubsWithDates.length > 0) {
+                const nextDue = new Date(Math.min(...activeSubsWithDates.map(sub => new Date(sub.paymentDate))));
+                nextDueDate.textContent = nextDue.toLocaleDateString('en-US', { 
+                    month: 'short', 
+                    day: 'numeric' 
+                });
+                
+                const daysUntilDue = Math.ceil((nextDue - now) / (1000 * 60 * 60 * 24));
+                const maxDays = 30; // Max days for due progress
+                const progressPercent = 100 - Math.min(daysUntilDue / maxDays * 100, 100);
+                dueProgress.style.width = `${progressPercent}%`;
+            } else {
+                nextDueDate.textContent = '--';
+                dueProgress.style.width = '0%';
+            }
+            
+            const uniqueCategories = [...new Set(subscriptions.map(sub => sub.category))];
+            categoryCount.textContent = uniqueCategories.length;
+            renderCategoryBadges();
+            
+            if (activeSubscriptions.length > 0) {
+                const mostExpensiveSub = activeSubscriptions.reduce((max, sub) => {
+                    const monthlyValue = getMonthlyValue(sub);
+                    return monthlyValue > max.monthlyValue ? {name: sub.name, monthlyValue} : max;
+                }, {name: '', monthlyValue: 0});
+                
+                mostExpensive.textContent = `${mostExpensiveSub.name} (${new Intl.NumberFormat('en-US', {
+                    style: 'currency',
+                    currency: 'USD'
+                }).format(mostExpensiveSub.monthlyValue)}/mo)`;
+            } else {
+                mostExpensive.textContent = '--';
+            }
+            
+            const yearlyTotalValue = monthlyTotal * 12;
+            yearlyTotal.textContent = new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD'
+            }).format(yearlyTotalValue);
+            
+            avgMonthly.textContent = new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD'
+            }).format(monthlyTotal);
+            
+            const monthlyBudget = monthlyTotal * 1.5; 
+            const monthlyProgressPercent = (monthlyTotal / monthlyBudget) * 100;
+            monthlyProgress.style.width = `${Math.min(monthlyProgressPercent, 100)}%`;
+        }
+        
+        function renderCategoryBadges() {
+            const categoryTotals = {};
+            const activeSubscriptions = subscriptions.filter(sub => sub.status === 'active');
+            
+            activeSubscriptions.forEach(sub => {
+                const monthlyValue = getMonthlyValue(sub);
+                if (!categoryTotals[sub.category]) {
+                    categoryTotals[sub.category] = 0;
+                }
+                categoryTotals[sub.category] += monthlyValue;
+            });
+            
+            categoryBadges.innerHTML = '';
+            
+            for (const category in categoryTotals) {
+                if (categoryTotals[category] > 0) {
+                    const badge = document.createElement('div');
+                    badge.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800';
+                    badge.innerHTML = `
+                        <span>${category}: ${new Intl.NumberFormat('en-US', {
+                            style: 'currency',
+                            currency: 'USD'
+                        }).format(categoryTotals[category])}</span>
+                    `;
+                    categoryBadges.appendChild(badge);
+                }
+            }
+        }
+        
+        function renderChart() {
+            const ctx = document.getElementById('spendingChart').getContext('2d');
+            
+            const activeSubscriptions = subscriptions.filter(sub => sub.status === 'active');
+            const categoryData = {};
+            
+            activeSubscriptions.forEach(sub => {
+                const monthlyValue = getMonthlyValue(sub);
+                if (!categoryData[sub.category]) {
+                    categoryData[sub.category] = 0;
+                }
+                categoryData[sub.category] += monthlyValue;
+            });
+            
+            const labels = Object.keys(categoryData);
+            const data = Object.values(categoryData);
+            
+            const backgroundColors = [
+                'rgba(79, 70, 229, 0.7)', // purple
+                'rgba(16, 185, 129, 0.7)', // green
+                'rgba(245, 158, 11, 0.7)', // yellow
+                'rgba(59, 130, 246, 0.7)', // blue
+                'rgba(239, 68, 68, 0.7)', // red
+                'rgba(156, 163, 175, 0.7)' // gray
+            ];
+            
+            if (spendingChart) {
+                spendingChart.destroy();
+            }
+            
+            spendingChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: backgroundColors,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.raw || 0;
+                                    return `${label}: ${new Intl.NumberFormat('en-US', {
+                                        style: 'currency',
+                                        currency: 'USD'
+                                    }).format(value)}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function renderUpcomingPayments() {
+            const now = new Date();
+            const thirtyDaysFromNow = new Date();
+            thirtyDaysFromNow.setDate(now.getDate() + 30);
+            
+            const upcoming = subscriptions
+                .filter(sub => sub.status === 'active')
+                .sort((a, b) => new Date(a.paymentDate) - new Date(b.paymentDate))
+                .filter(sub => {
+                    const paymentDate = new Date(sub.paymentDate);
+                    return paymentDate >= now && paymentDate <= thirtyDaysFromNow;
+                });
+            
+            upcomingPayments.innerHTML = '';
+            
+            if (upcoming.length === 0) {
+                upcomingPayments.innerHTML = `
+                    <div class="text-center py-8 text-gray-500">
+                        <i class="fas fa-clock text-3xl mb-3 text-gray-300"></i>
+                        <p>No upcoming payments</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            upcoming.forEach(sub => {
+                const dueSoon = isDueSoon(sub.paymentDate);
+                
+                const paymentItem = document.createElement('div');
+                paymentItem.className = `p-3 rounded-lg ${dueSoon ? 'bg-yellow-50 border border-yellow-200' : 'bg-gray-50'}`;
+                
+                const paymentDate = new Date(sub.paymentDate);
+                const formattedDate = paymentDate.toLocaleDateString('en-US', { 
+                    weekday: 'short',
+                    month: 'short', 
+                    day: 'numeric',
+                    year: paymentDate.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined
+                });
+                
+                const daysUntil = Math.floor((paymentDate - now) / (1000 * 60 * 60 * 24));
+                
+                const categoryColors = {
+                    'Entertainment': 'bg-purple-100 text-purple-800',
+                    'Productivity': 'bg-blue-100 text-blue-800',
+                    'Utilities': 'bg-green-100 text-green-800',
+                    'Education': 'bg-indigo-100 text-indigo-800',
+                    'Health & Fitness': 'bg-red-100 text-red-800',
+                    'Other': 'bg-gray-100 text-gray-800'
+                };
+                
+                const catColor = categoryColors[sub.category] || 'bg-gray-100 text-gray-800';
+                
+                paymentItem.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center">
+                            <div class="category-icon ${catColor} mr-3">
+                                <i class="${getCategoryIcon(sub.category)}"></i>
+                            </div>
+                            <div>
+                                <div class="font-medium">${sub.name}</div>
+                                <div class="text-xs text-gray-500">${sub.category}</div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-medium">${new Intl.NumberFormat('en-US', {
+                                style: 'currency',
+                                currency: 'USD'
+                            }).format(sub.amount)}</div>
+                            <div class="text-xs ${dueSoon ? 'text-yellow-700 font-semibold' : 'text-gray-500'}">
+                                ${formattedDate} ${dueSoon ? `• Due in ${daysUntil} day${daysUntil !== 1 ? 's' : ''}` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                upcomingPayments.appendChild(paymentItem);
+            });
+        }
+        
+        function getMonthlyValue(subscription) {
+            switch(subscription.billingCycle) {
+                case 'monthly': return subscription.amount;
+                case 'yearly': return subscription.amount / 12;
+                case 'weekly': return subscription.amount * 4;
+                case 'quarterly': return subscription.amount / 3;
+                case 'bi-annual': return subscription.amount / 6;
+                default: return subscription.amount;
+            }
+        }
+        
+        function getFrequencyText(billingCycle) {
+            switch(billingCycle) {
+                case 'monthly': return 'Monthly';
+                case 'yearly': return 'Yearly';
+                case 'weekly': return 'Weekly';
+                case 'quarterly': return 'Quarterly';
+                case 'bi-annual': return 'Bi-Annual';
+                default: return '';
+            }
+        }
+        
+        function getCategoryIcon(category) {
+            const categoryIcons = {
+                'Entertainment': 'fas fa-film',
+                'Productivity': 'fas fa-briefcase',
+                'Utilities': 'fas fa-bolt',
+                'Education': 'fas fa-graduation-cap',
+                'Health & Fitness': 'fas fa-heartbeat',
+                'Other': 'fas fa-tag'
+            };
+            
+            const customCat = categories.find(cat => cat.name === category);
+            if (customCat) return customCat.icon;
+            
+            return categoryIcons[category] || 'fas fa-tag';
+        }
+        
+        function isDueSoon(paymentDate) {
+            const now = new Date();
+            const sevenDaysFromNow = new Date();
+            sevenDaysFromNow.setDate(now.getDate() + 7);
+            
+            const date = new Date(paymentDate);
+            return date >= now && date <= sevenDaysFromNow;
+        }
+    </script>
+</body>
+</html>

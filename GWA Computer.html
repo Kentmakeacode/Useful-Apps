@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>College GWA Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --secondary: #10b981;
+            --dark: #1e293b;
+            --light: #f8fafc;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f1f5f9;
+            color: var(--dark);
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+        }
+        
+        .course-card {
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        
+        .course-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        
+        .grade-A { background-color: #10b981; color: white; }
+        .grade-B { background-color: #3b82f6; color: white; }
+        .grade-C { background-color: #f59e0b; color: white; }
+        .grade-D { background-color: #ef4444; color: white; }
+        .grade-F { background-color: #64748b; color: white; }
+        
+        .animate-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .tooltip {
+            position: relative;
+        }
+        
+        .tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+        
+        .tooltip-text {
+            visibility: hidden;
+            width: 200px;
+            background-color: var(--dark);
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -100px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <div class="gradient-bg text-white py-8 px-4 shadow-lg">
+        <div class="container mx-auto">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div>
+                    <h1 class="text-3xl md:text-4xl font-bold mb-2">College GWA Calculator</h1>
+                    <p class="text-white/80">Calculate your Grade Weighted Average with ease</p>
+                </div>
+                <div class="mt-4 md:mt-0 flex items-center space-x-2">
+                    <div class="bg-white/20 p-3 rounded-full">
+                        <i class="fas fa-graduation-cap text-2xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs opacity-80">Current GWA</p>
+                        <h2 id="currentGwa" class="text-2xl font-bold">--</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="container mx-auto px-4 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="lg:col-span-1 bg-white rounded-xl shadow-md p-6 h-fit">
+                <h2 class="text-xl font-semibold mb-4 text-gray-800">Add New Course</h2>
+                
+                <form id="courseForm" class="space-y-4">
+                    <div>
+                        <label for="courseCode" class="block text-sm font-medium text-gray-700 mb-1">Course Code</label>
+                        <input type="text" id="courseCode" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="e.g. CS101" required>
+                    </div>
+                    
+                    <div>
+                        <label for="courseName" class="block text-sm font-medium text-gray-700 mb-1">Course Name</label>
+                        <input type="text" id="courseName" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="e.g. Introduction to Programming" required>
+                    </div>
+                    
+                    <div>
+                        <label for="units" class="block text-sm font-medium text-gray-700 mb-1">Units</label>
+                        <input type="number" id="units" min="0.5" max="10" step="0.5" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="e.g. 3" required>
+                    </div>
+                    
+                    <div>
+                        <label for="grade" class="block text-sm font-medium text-gray-700 mb-1">Grade</label>
+                        <select id="grade" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" required>
+                            <option value="">Select grade</option>
+                            <option value="1.00">1.00 (A+)</option>
+                            <option value="1.25">1.25 (A)</option>
+                            <option value="1.50">1.50 (A-)</option>
+                            <option value="1.75">1.75 (B+)</option>
+                            <option value="2.00">2.00 (B)</option>
+                            <option value="2.25">2.25 (B-)</option>
+                            <option value="2.50">2.50 (C+)</option>
+                            <option value="2.75">2.75 (C)</option>
+                            <option value="3.00">3.00 (C-)</option>
+                            <option value="4.00">4.00 (D)</option>
+                            <option value="5.00">5.00 (F)</option>
+                            <option value="0.00">INC (Incomplete)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="pt-2">
+                        <button type="submit" class="w-full gradient-bg text-white py-2 px-4 rounded-lg font-medium hover:opacity-90 transition duration-200 flex items-center justify-center space-x-2">
+                            <i class="fas fa-plus"></i>
+                            <span>Add Course</span>
+                        </button>
+                    </div>
+                </form>
+                
+                <div class="mt-6 pt-4 border-t border-gray-200">
+                    <h3 class="text-sm font-medium text-gray-500 mb-2">GWA Information</h3>
+                    <div class="space-y-2 text-sm text-gray-600">
+                        <p><span class="font-medium">GWA Range:</span> 1.00 (Highest) - 5.00 (Lowest)</p>
+                        <p><span class="font-medium">Passing Grade:</span> Typically 3.00 or below</p>
+                        <p><span class="font-medium">Honors Cutoff:</span> Usually 1.75 or below</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="lg:col-span-2 space-y-4">
+                <div class="bg-white rounded-xl shadow-md p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-semibold text-gray-800">Your Courses</h2>
+                        <div class="flex space-x-2">
+                            <button id="clearAll" class="text-red-500 hover:text-red-700 text-sm font-medium flex items-center space-x-1">
+                                <i class="fas fa-trash-alt"></i>
+                                <span>Clear All</span>
+                            </button>
+                            <button id="exportBtn" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium flex items-center space-x-1">
+                                <i class="fas fa-file-export"></i>
+                                <span>Export</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="coursesContainer" class="space-y-3">
+                        <div id="noCourses" class="text-center py-8 text-gray-500">
+                            <i class="fas fa-book-open text-4xl mb-2"></i>
+                            <p>No courses added yet</p>
+                            <p class="text-sm mt-1">Add your first course to get started</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-md p-6">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4">Statistics</h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <p class="text-sm text-gray-500">Total Units</p>
+                            <p id="totalUnits" class="text-2xl font-bold text-indigo-600">0</p>
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <p class="text-sm text-gray-500">Total Courses</p>
+                            <p id="totalCourses" class="text-2xl font-bold text-emerald-600">0</p>
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <p class="text-sm text-gray-500">GWA</p>
+                            <p id="gwaValue" class="text-2xl font-bold text-amber-600">--</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6">
+                        <h3 class="font-medium text-gray-700 mb-2">Grade Distribution</h3>
+                        <div id="gradeChart" class="h-40">
+                            <canvas id="gradeChartCanvas"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="exportModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl p-6 max-w-md w-full mx-4">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold">Export Courses</h3>
+                <button id="closeExportModal" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Export Format</label>
+                    <select id="exportFormat" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                        <option value="json">JSON</option>
+                        <option value="csv">CSV</option>
+                        <option value="text">Plain Text</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">File Name</label>
+                    <input type="text" id="exportFileName" class="w-full px-4 py-2 border border-gray-300 rounded-lg" value="my_courses">
+                </div>
+                
+                <div class="pt-2">
+                    <button id="confirmExport" class="w-full gradient-bg text-white py-2 px-4 rounded-lg font-medium hover:opacity-90 transition duration-200">
+                        Export Data
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const courseForm = document.getElementById('courseForm');
+            const coursesContainer = document.getElementById('coursesContainer');
+            const noCourses = document.getElementById('noCourses');
+            const currentGwa = document.getElementById('currentGwa');
+            const totalUnits = document.getElementById('totalUnits');
+            const totalCourses = document.getElementById('totalCourses');
+            const gwaValue = document.getElementById('gwaValue');
+            const clearAll = document.getElementById('clearAll');
+            const exportBtn = document.getElementById('exportBtn');
+            const exportModal = document.getElementById('exportModal');
+            const closeExportModal = document.getElementById('closeExportModal');
+            const confirmExport = document.getElementById('confirmExport');
+            const exportFormat = document.getElementById('exportFormat');
+            const exportFileName = document.getElementById('exportFileName');
+            
+            const gradeChartCanvas = document.getElementById('gradeChartCanvas');
+            let gradeChart = new Chart(gradeChartCanvas, {
+                type: 'bar',
+                data: {
+                    labels: ['A (1.00-1.50)', 'B (1.75-2.25)', 'C (2.50-3.00)', 'D (4.00)', 'F (5.00)', 'INC'],
+                    datasets: [{
+                        label: 'Number of Courses',
+                        data: [0, 0, 0, 0, 0, 0],
+                        backgroundColor: [
+                            '#10b981',
+                            '#3b82f6',
+                            '#f59e0b',
+                            '#ef4444',
+                            '#64748b',
+                            '#94a3b8'
+                        ],
+                        borderColor: [
+                            '#10b981',
+                            '#3b82f6',
+                            '#f59e0b',
+                            '#ef4444',
+                            '#64748b',
+                            '#94a3b8'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+            
+            let courses = JSON.parse(localStorage.getItem('courses')) || [];
+            
+            function renderCourses() {
+                if (courses.length === 0) {
+                    noCourses.classList.remove('hidden');
+                    coursesContainer.innerHTML = '';
+                    coursesContainer.appendChild(noCourses);
+                } else {
+                    noCourses.classList.add('hidden');
+                    coursesContainer.innerHTML = '';
+                    
+                    courses.forEach((course, index) => {
+                        const courseCard = document.createElement('div');
+                        courseCard.className = 'course-card bg-white border border-gray-200 rounded-lg p-4 hover:border-indigo-200';
+                        
+                        let gradeClass = '';
+                        if (course.grade === '0.00') {
+                            gradeClass = 'bg-gray-200 text-gray-800';
+                        } else if (course.grade <= 1.50) {
+                            gradeClass = 'grade-A';
+                        } else if (course.grade <= 2.25) {
+                            gradeClass = 'grade-B';
+                        } else if (course.grade <= 3.00) {
+                            gradeClass = 'grade-C';
+                        } else if (course.grade === 4.00) {
+                            gradeClass = 'grade-D';
+                        } else if (course.grade === 5.00) {
+                            gradeClass = 'grade-F';
+                        }
+                        
+                        courseCard.innerHTML = `
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <h3 class="font-medium text-gray-800">${course.code} - ${course.name}</h3>
+                                    <p class="text-sm text-gray-500">${course.units} unit${course.units !== 1 ? 's' : ''}</p>
+                                </div>
+                                <div class="flex items-center space-x-3">
+                                    <span class="px-3 py-1 rounded-full text-sm font-medium ${gradeClass}">
+                                        ${course.grade === '0.00' ? 'INC' : course.grade}
+                                    </span>
+                                    <button class="delete-btn text-gray-400 hover:text-red-500" data-index="${index}">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                        
+                        coursesContainer.appendChild(courseCard);
+                    });
+                    
+                    document.querySelectorAll('.delete-btn').forEach(btn => {
+                        btn.addEventListener('click', function() {
+                            const index = parseInt(this.getAttribute('data-index'));
+                            deleteCourse(index);
+                        });
+                    });
+                }
+                
+                updateStatistics();
+            }
+            
+            function calculateGWA() {
+                if (courses.length === 0) {
+                    currentGwa.textContent = '--';
+                    gwaValue.textContent = '--';
+                    return null;
+                }
+                
+                let totalWeightedGrade = 0;
+                let totalUnitsValue = 0;
+                let hasIncomplete = false;
+                
+                courses.forEach(course => {
+                    if (course.grade === '0.00') {
+                        hasIncomplete = true;
+                    } else {
+                        totalWeightedGrade += parseFloat(course.grade) * parseFloat(course.units);
+                        totalUnitsValue += parseFloat(course.units);
+                    }
+                });
+                
+                if (totalUnitsValue === 0) {
+                    currentGwa.textContent = 'INC';
+                    gwaValue.textContent = 'INC';
+                    return 'INC';
+                }
+                
+                const gwa = totalWeightedGrade / totalUnitsValue;
+                const roundedGwa = Math.round(gwa * 100) / 100;
+                
+                currentGwa.textContent = roundedGwa.toFixed(2);
+                gwaValue.textContent = roundedGwa.toFixed(2);
+                
+                if (hasIncomplete) {
+                    currentGwa.classList.add('animate-pulse');
+                } else {
+                    currentGwa.classList.remove('animate-pulse');
+                }
+                
+                return roundedGwa;
+            }
+            
+            function updateStatistics() {
+                totalCourses.textContent = courses.length;
+                
+                const units = courses.reduce((total, course) => {
+                    return total + parseFloat(course.units);
+                }, 0);
+                
+                totalUnits.textContent = units;
+                
+                calculateGWA();
+                
+                updateGradeChart();
+            }
+            
+            function updateGradeChart() {
+                const gradeRanges = {
+                    a: 0, // 1.00-1.50
+                    b: 0, // 1.75-2.25
+                    c: 0, // 2.50-3.00
+                    d: 0, // 4.00
+                    f: 0, // 5.00
+                    inc: 0 // 0.00
+                };
+                
+                courses.forEach(course => {
+                    const grade = parseFloat(course.grade);
+                    
+                    if (course.grade === '0.00') {
+                        gradeRanges.inc++;
+                    } else if (grade <= 1.50) {
+                        gradeRanges.a++;
+                    } else if (grade <= 2.25) {
+                        gradeRanges.b++;
+                    } else if (grade <= 3.00) {
+                        gradeRanges.c++;
+                    } else if (grade === 4.00) {
+                        gradeRanges.d++;
+                    } else if (grade === 5.00) {
+                        gradeRanges.f++;
+                    }
+                });
+                
+                gradeChart.data.datasets[0].data = [
+                    gradeRanges.a,
+                    gradeRanges.b,
+                    gradeRanges.c,
+                    gradeRanges.d,
+                    gradeRanges.f,
+                    gradeRanges.inc
+                ];
+                
+                gradeChart.update();
+            }
+            
+            function addCourse(code, name, units, grade) {
+                courses.push({
+                    code: code.trim().toUpperCase(),
+                    name: name.trim(),
+                    units: parseFloat(units),
+                    grade: grade
+                });
+                
+                localStorage.setItem('courses', JSON.stringify(courses));
+                renderCourses();
+            }
+            
+            function deleteCourse(index) {
+                courses.splice(index, 1);
+                localStorage.setItem('courses', JSON.stringify(courses));
+                renderCourses();
+            }
+            
+            function clearAllCourses() {
+                if (confirm('Are you sure you want to delete all courses? This action cannot be undone.')) {
+                    courses = [];
+                    localStorage.removeItem('courses');
+                    renderCourses();
+                }
+            }
+            
+            function exportCourses(format, filename) {
+                let content = '';
+                let mimeType = '';
+                let extension = '';
+                
+                switch (format) {
+                    case 'json':
+                        content = JSON.stringify(courses, null, 2);
+                        mimeType = 'application/json';
+                        extension = 'json';
+                        break;
+                    
+                    case 'csv':
+                        content = 'Code,Name,Units,Grade\n';
+                        
+                        courses.forEach(course => {
+                            content += `"${course.code}","${course.name}",${course.units},${course.grade}\n`;
+                        });
+                        
+                        mimeType = 'text/csv';
+                        extension = 'csv';
+                        break;
+                    
+                    case 'text':
+                        content = 'COURSE LIST\n\n';
+                        content += `Total Courses: ${courses.length}\n`;
+                        content += `Total Units: ${courses.reduce((total, course) => total + parseFloat(course.units), 0)}\n`;
+                        
+                        const gwa = calculateGWA();
+                        content += `GWA: ${gwa === null ? 'N/A' : gwa}\n\n`;
+                        
+                        content += 'COURSES:\n';
+                        courses.forEach((course, index) => {
+                            content += `${index + 1}. ${course.code} - ${course.name} (${course.units} units): ${course.grade === '0.00' ? 'INC' : course.grade}\n`;
+                        });
+                        
+                        mimeType = 'text/plain';
+                        extension = 'txt';
+                        break;
+                }
+                
+                const blob = new Blob([content], { type: mimeType });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${filename}.${extension}`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+            
+            courseForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const code = document.getElementById('courseCode').value;
+                const name = document.getElementById('courseName').value;
+                const units = document.getElementById('units').value;
+                const grade = document.getElementById('grade').value;
+                
+                addCourse(code, name, units, grade);
+                
+                courseForm.reset();
+                document.getElementById('courseCode').focus();
+            });
+            
+            clearAll.addEventListener('click', clearAllCourses);
+            
+            exportBtn.addEventListener('click', function() {
+                if (courses.length === 0) {
+                    alert('No courses to export. Please add courses first.');
+                    return;
+                }
+                
+                exportModal.classList.remove('hidden');
+            });
+            
+            closeExportModal.addEventListener('click', function() {
+                exportModal.classList.add('hidden');
+            });
+            
+            confirmExport.addEventListener('click', function() {
+                const format = exportFormat.value;
+                let filename = exportFileName.value.trim();
+                
+                if (!filename) {
+                    filename = 'my_courses';
+                }
+                
+                exportCourses(format, filename);
+                exportModal.classList.add('hidden');
+            });
+            
+            renderCourses();
+        });
+    </script>
+</body>
+</html>
